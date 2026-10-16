@@ -14,7 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      facilities: {
+        Row: {
+          address: string | null
+          category: string
+          created_at: string
+          description: string | null
+          has_seating: boolean | null
+          has_shade: boolean | null
+          has_water: boolean | null
+          id: string
+          is_demo: boolean
+          is_free: boolean | null
+          last_confirmed_at: string | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          opening_hours: string | null
+          public_access: boolean | null
+          resting_allowed: boolean | null
+          updated_at: string
+          verification_source: string | null
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          has_seating?: boolean | null
+          has_shade?: boolean | null
+          has_water?: boolean | null
+          id?: string
+          is_demo?: boolean
+          is_free?: boolean | null
+          last_confirmed_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          opening_hours?: string | null
+          public_access?: boolean | null
+          resting_allowed?: boolean | null
+          updated_at?: string
+          verification_source?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          has_seating?: boolean | null
+          has_shade?: boolean | null
+          has_water?: boolean | null
+          id?: string
+          is_demo?: boolean
+          is_free?: boolean | null
+          last_confirmed_at?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          opening_hours?: string | null
+          public_access?: boolean | null
+          resting_allowed?: boolean | null
+          updated_at?: string
+          verification_source?: string | null
+        }
+        Relationships: []
+      }
+      facility_reports: {
+        Row: {
+          comment: string | null
+          created_at: string
+          facility_id: string
+          id: string
+          is_demo: boolean
+          report_type: string
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          facility_id: string
+          id?: string
+          is_demo?: boolean
+          report_type: string
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          facility_id?: string
+          id?: string
+          is_demo?: boolean
+          report_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facility_reports_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      saved_facilities: {
+        Row: {
+          created_at: string
+          facility_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          facility_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          facility_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_facilities_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
