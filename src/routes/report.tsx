@@ -44,7 +44,7 @@ function ReportPage() {
   const mut = useMutation({
     mutationFn: async () => {
       const parsed = schema.safeParse({ facility_id: facilityId, report_type: type, comment: comment || undefined });
-      if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
       const { error } = await supabase.from("facility_reports").insert({
         facility_id: parsed.data.facility_id,
         report_type: parsed.data.report_type,
