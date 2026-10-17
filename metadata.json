@@ -1,0 +1,6 @@
+{
+  "name": "AERA — Find Shade. Find Relief.",
+  "description": "Find drinking-water points and shaded places to rest for outdoor workers in India, with honest freshness indicators.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

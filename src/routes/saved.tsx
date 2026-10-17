@@ -23,11 +23,24 @@ function Saved() {
   const saved = useQuery(savedIdsQuery(user?.id));
   const all = useQuery({ ...facilitiesQuery, enabled: !!user });
 
-  if (loading) return <AppShell title="Saved"><Spinner /></AppShell>;
+  if (loading)
+    return (
+      <AppShell title="Saved">
+        <Spinner />
+      </AppShell>
+    );
   if (!user)
     return (
       <AppShell title="Saved">
-        <StateBox title="Sign in to save places" body="Keep your go-to spots one tap away." action={<Link to="/auth" className={primaryBtn}>Sign in</Link>} />
+        <StateBox
+          title="Sign in to save places"
+          body="Keep your go-to spots one tap away."
+          action={
+            <Link to="/auth" className={primaryBtn}>
+              Sign in
+            </Link>
+          }
+        />
       </AppShell>
     );
 
@@ -38,9 +51,23 @@ function Saved() {
   return (
     <AppShell title="Saved">
       <div className="space-y-3">
-        {isLoading ? <Spinner /> : err ? <StateBox title="Couldn't load saved places" body={friendlyError(err)} /> :
-          items.length === 0 ? <StateBox title="Nothing saved yet" body="Tap Save on any place to keep it here." action={<Link to="/" className="font-semibold text-primary">Explore places</Link>} /> :
-          items.map((f) => <FacilityCard key={f!.id} f={f!} />)}
+        {isLoading ? (
+          <Spinner />
+        ) : err ? (
+          <StateBox title="Couldn't load saved places" body={friendlyError(err)} />
+        ) : items.length === 0 ? (
+          <StateBox
+            title="Nothing saved yet"
+            body="Tap Save on any place to keep it here."
+            action={
+              <Link to="/" className="font-semibold text-primary">
+                Explore places
+              </Link>
+            }
+          />
+        ) : (
+          items.map((f) => <FacilityCard key={f!.id} f={f!} />)
+        )}
       </div>
     </AppShell>
   );

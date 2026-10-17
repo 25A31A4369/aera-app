@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth";
+import { LanguageProvider } from "@/lib/language";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -22,7 +23,10 @@ function NotFoundComponent() {
         <h1 className="font-display text-7xl font-medium text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
         <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
             Go home
           </Link>
         </div>
@@ -41,12 +45,22 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Something went wrong. Try again or head back home.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Something went wrong. Try again or head back home.
+        </p>
         <div className="mt-6 flex justify-center gap-2">
-          <button onClick={() => { router.invalidate(); reset(); }} className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+          <button
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
             Try again
           </button>
-          <a href="/" className="rounded-xl border px-4 py-2 text-sm font-medium">Go home</a>
+          <a href="/" className="rounded-xl border px-4 py-2 text-sm font-medium">
+            Go home
+          </a>
         </div>
       </div>
     </div>
@@ -63,7 +77,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -93,10 +110,17 @@ function RootComponent() {
   const router = useRouter();
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider onChange={() => { router.invalidate(); queryClient.invalidateQueries(); }}>
-        <Outlet />
-        <Toaster position="top-center" />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider
+          onChange={() => {
+            router.invalidate();
+            queryClient.invalidateQueries();
+          }}
+        >
+          <Outlet />
+          <Toaster position="top-center" />
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

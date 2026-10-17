@@ -3,16 +3,20 @@
 Mobile-first app that helps outdoor workers find drinking water, shade and rest spots, and see how recently each place was confirmed.
 
 ## Stack
+
 TanStack Start (React 19, TypeScript), Tailwind CSS v4, Lovable Cloud (Postgres + Auth, Supabase-compatible).
 
 ## Local setup
+
 ```bash
 bun install
 bun run dev        # http://localhost:8080
 ```
 
 ## Environment variables (`.env`)
+
 Only public, browser-safe values are needed:
+
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_PROJECT_ID`
@@ -20,7 +24,9 @@ Only public, browser-safe values are needed:
 Never put a service-role key or database password in frontend code or `VITE_` variables.
 
 ## Database, RLS and demo data
+
 Schema lives in the applied migration (`drizzle/migrations/`). Tables: `profiles`, `facilities`, `facility_reports`, `saved_facilities`.
+
 - RLS is enabled on every table.
 - `profiles`: readable/editable only by the owner. Auto-created on sign-up.
 - `facilities`: public read; no client writes.
@@ -29,17 +35,21 @@ Schema lives in the applied migration (`drizzle/migrations/`). Tables: `profiles
 - Demo seed: 4 fictional facilities and sample reports with `is_demo = true`, shown in the UI with a **DEMO DATA** label. Seed times are relative to when the migration ran, so the "recent" demo items naturally become stale after 24 hours.
 
 ## Trust status (`src/lib/trust.ts`)
+
 `FRESHNESS_HOURS = 24` (configurable).
+
 - Mixed recent reports → **Status Uncertain**
 - Only negative recent reports → **Status Uncertain**
 - Only positive recent reports, or confirmation within window → **Recently Confirmed**
 - Otherwise → **Needs Reconfirmation**
-Every badge shows its reason; community reports are never presented as independent verification.
+  Every badge shows its reason; community reports are never presented as independent verification.
 
 ## GitHub & deployment
+
 Connect GitHub from the Lovable editor (Connectors → GitHub). Publish from the Lovable editor. The app is also deployable to any Cloudflare-Workers-compatible host with the env vars above.
 
 ## Manual test checklist
+
 - [ ] Explore loads, search and filters work, DEMO DATA labels visible
 - [ ] "Use location" — allow and deny both show a clear message
 - [ ] Facility page shows "Not confirmed" for unknown fields and the trust reason

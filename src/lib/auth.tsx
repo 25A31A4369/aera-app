@@ -10,7 +10,13 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState>({ user: null, session: null, loading: true });
 
-export function AuthProvider({ children, onChange }: { children: ReactNode; onChange?: () => void }) {
+export function AuthProvider({
+  children,
+  onChange,
+}: {
+  children: ReactNode;
+  onChange?: () => void;
+}) {
   const [state, setState] = useState<AuthState>({ user: null, session: null, loading: true });
 
   useEffect(() => {

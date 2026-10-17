@@ -69,8 +69,14 @@ export const myReportsQuery = (userId: string | undefined) =>
   });
 
 export function friendlyError(e: unknown): string {
-  const msg = e instanceof Error ? e.message : typeof e === "object" && e && "message" in e ? String((e as { message: unknown }).message) : String(e);
+  const msg =
+    e instanceof Error
+      ? e.message
+      : typeof e === "object" && e && "message" in e
+        ? String((e as { message: unknown }).message)
+        : String(e);
   if (msg.includes("RATE_LIMIT")) return msg.replace(/^.*RATE_LIMIT:\s*/, "");
-  if (/fetch|network/i.test(msg)) return "Could not reach the server. Check your connection and try again.";
+  if (/fetch|network/i.test(msg))
+    return "Could not reach the server. Check your connection and try again.";
   return msg || "Something went wrong.";
 }
