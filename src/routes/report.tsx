@@ -36,8 +36,10 @@ const schema = z.object({
   comment: z.string().trim().max(300, "Keep comments under 300 characters").optional(),
 });
 
+import { addDemoReport } from "@/lib/demo-mode";
+
 function ReportPage() {
-  const { user, loading } = useAuth();
+  const { user, isDemo, loading } = useAuth();
   const search = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -54,6 +56,17 @@ function ReportPage() {
         comment: comment || undefined,
       });
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid input");
+
+      if (isDemo) {
+        // Safe, isolated demo mode report
+        addDemoReport({
+          facility_id: parsed.data.facility_id,
+          report_type: parsed.data.report_type,
+          comment: parsed.data.comment,
+        });
+        return parsed.data.facility_id;
+      }
+
       const { error } = await supabase.from("facility_reports").insert({
         facility_id: parsed.data.facility_id,
         report_type: parsed.data.report_type,
@@ -64,7 +77,9 @@ function ReportPage() {
       return parsed.data.facility_id;
     },
     onSuccess: (fid) => {
-      toast.success("Thanks — your report was saved.");
+      toast.success(
+        isDemo ? "Demo report submitted successfully" : "Thanks — your report was saved.",
+      );
       qc.invalidateQueries();
       navigate({ to: "/facility/$id", params: { id: fid } });
     },
@@ -153,6 +168,13 @@ function ReportPage() {
           />
           <span className="text-xs text-muted-foreground">{comment.length}/300</span>
         </label>
+
+        {isDemo && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-center text-xs text-amber-800">
+            <span className="font-bold">Demo Mode:</span> Your report updates trust freshness
+            immediately and remains isolated to this evaluation session.
+          </div>
+        )}
 
         <button type="submit" disabled={mut.isPending} className={primaryBtn}>
           {mut.isPending ? "Submitting…" : "Submit report"}

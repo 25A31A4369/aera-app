@@ -62,15 +62,14 @@ function Explore() {
   const { t } = useLanguage();
   const q = useQuery(facilitiesQuery);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "water" | "shade" | "rest">("all");
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [filter, setFilter] = useState<"all" | "water" | "shade">("all");
+  const [viewMode, setViewMode] = useState<"list" | "map">("map");
   const [loc, setLoc] = useState<LocState>({ kind: "idle" });
 
   const filterTabs = [
     { key: "all" as const, label: t("filter_all") },
     { key: "water" as const, label: t("filter_water") },
     { key: "shade" as const, label: t("filter_shade") },
-    { key: "rest" as const, label: t("filter_rest") },
   ];
 
   const askLocation = () => {
@@ -102,7 +101,11 @@ function Explore() {
   const list = useMemo(() => {
     const s = search.trim().toLowerCase();
     const rows = (q.data ?? [])
-      .filter((f) => filter === "all" || f.category === filter)
+      .filter((f) => {
+        if (filter === "water") return f.category === "water";
+        if (filter === "shade") return f.category === "shade" || f.category === "rest";
+        return true;
+      })
       .filter(
         (f) => !s || [f.name, f.address, f.description].some((v) => v?.toLowerCase().includes(s)),
       )
@@ -118,6 +121,7 @@ function Explore() {
 
   return (
     <AppShell title={t("tagline")} subtitle={t("hero_subtitle")}>
+      {/* Search Bar */}
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -125,23 +129,23 @@ function Explore() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("search_placeholder")}
           aria-label={t("search_placeholder")}
-          className={cn(inputCls, "pl-11 text-sm")}
+          className={cn(inputCls, "pl-11 text-sm shadow-xs")}
         />
       </div>
 
-      {/* Filter Tabs & Map/List Toggle */}
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="-mx-5 flex flex-1 gap-2 overflow-x-auto px-5 pb-1">
+      {/* Exactly Three Category Filters & Map/List Toggle */}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-1 items-center gap-1.5 overflow-x-auto pb-0.5">
           {filterTabs.map((f) => (
             <button
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
               className={cn(
-                "h-10 shrink-0 rounded-full border px-4 text-xs font-semibold transition-all",
+                "h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition-all active:scale-95",
                 filter === f.key
-                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                  : "border-border bg-card text-foreground hover:bg-muted/60",
+                  ? "border-primary bg-primary text-primary-foreground shadow-xs font-bold"
+                  : "border-border/90 bg-card text-foreground/80 hover:bg-muted/70 hover:text-foreground",
               )}
             >
               {f.label}

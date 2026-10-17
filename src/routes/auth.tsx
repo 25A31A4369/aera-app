@@ -11,7 +11,6 @@ import {
   Mail,
   User as UserIcon,
   ArrowLeft,
-  Compass,
   KeyRound,
   Sparkles,
 } from "lucide-react";
@@ -123,11 +122,23 @@ function AuthPage() {
           });
           toast.info("Input validated. Supabase backend awaiting configuration.");
         } else {
-          toast.error(result.error ?? "Sign in failed");
-          setStatusNotice({
-            type: "error",
-            message: result.error ?? "Invalid credentials",
-          });
+          const isDemoEmail = email.toLowerCase().trim() === "aera.demo@example.com";
+          if (isDemoEmail) {
+            setStatusNotice({
+              type: "warning",
+              message:
+                "Demo account 'aera.demo@example.com' has not been created in your Supabase Auth dashboard yet. You can create it in the Create Account tab with password 'AeraDemo@2026' or via your Supabase Auth dashboard.",
+            });
+            toast.error(
+              "Demo account not found in Supabase Auth. Register it in Create Account to enable sign-in.",
+            );
+          } else {
+            toast.error(result.error ?? "Sign in failed");
+            setStatusNotice({
+              type: "error",
+              message: result.error ?? "Invalid credentials",
+            });
+          }
         }
       } else if (mode === "signup") {
         const result = await signUpWithEmail(name, email, password);
@@ -199,14 +210,6 @@ function AuthPage() {
             <span>{currentOption.label}</span>
             <span className="text-[10px] underline font-normal">({t("change_language")})</span>
           </button>
-
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            <Compass className="h-3.5 w-3.5" />
-            <span>{t("continue_as_guest")}</span>
-          </Link>
         </div>
 
         {/* Brand Header */}
@@ -218,7 +221,9 @@ function AuthPage() {
             </h1>
           </Link>
           <p className="mt-1 font-display text-sm font-medium text-foreground/85">{t("tagline")}</p>
-          <p className="mt-2 text-xs text-muted-foreground px-4">{t("browse_freely_note")}</p>
+          <p className="mt-2 text-xs text-muted-foreground px-4">
+            Sign in to access your saved places and submit community reports.
+          </p>
         </header>
 
         {/* Mode Switcher Tabs */}
@@ -472,6 +477,24 @@ function AuthPage() {
             )}
           </button>
 
+          {/* Fill Demo Credentials Button (below Sign In) */}
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("aera.demo@example.com");
+                setPassword("AeraDemo@2026");
+                setFieldErrors({});
+                setStatusNotice(null);
+                toast.info("Demo credentials filled. Click Sign In to continue.");
+              }}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-secondary/70 text-xs font-bold text-primary hover:bg-secondary active:scale-[0.99] transition shadow-xs"
+            >
+              <KeyRound className="h-3.5 w-3.5" />
+              <span>Fill Demo Credentials</span>
+            </button>
+          )}
+
           {/* Mode Switcher Links */}
           {mode === "forgot" ? (
             <div className="text-center pt-2">
@@ -524,67 +547,11 @@ function AuthPage() {
             </div>
           )}
         </form>
-
-        {/* Try Demo Account Section */}
-        {mode === "signin" && (
-          <div className="rounded-2xl border border-primary/20 bg-card p-4 text-xs shadow-soft space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-bold text-primary">
-                <Sparkles className="h-4 w-4" />
-                <span>{t("demo_account_title")}</span>
-              </div>
-              <span className="rounded-md bg-demo px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-demo-foreground">
-                Demo
-              </span>
-            </div>
-
-            <p className="text-muted-foreground leading-relaxed">{t("demo_account_desc")}</p>
-
-            <div className="rounded-xl border border-border/80 bg-muted/40 p-2.5 space-y-1 font-mono text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground font-sans">Email:</span>
-                <span className="font-semibold text-foreground select-all">
-                  aera.demo@example.com
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground font-sans">Password:</span>
-                <span className="font-semibold text-foreground select-all">AeraDemo@2026</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("aera.demo@example.com");
-                setPassword("AeraDemo@2026");
-                setFieldErrors({});
-                toast.info("Demo credentials filled. Press Sign In to continue.");
-              }}
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-secondary/60 font-bold text-primary hover:bg-secondary active:scale-[0.99] transition shadow-xs"
-            >
-              <KeyRound className="h-3.5 w-3.5" />
-              <span>{t("fill_demo_creds")}</span>
-            </button>
-
-            <p className="text-[10px] text-muted-foreground leading-normal italic">
-              Note: These are proposed demo credentials. If this account hasn't been created yet in
-              your Supabase Auth dashboard, sign-in will report invalid credentials. You can create
-              this account via the Create Account tab.
-            </p>
-          </div>
-        )}
       </main>
 
-      {/* Guest Explorer Fallback Footer */}
-      <footer className="mt-8 text-center space-y-2">
-        <Link
-          to="/"
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-card px-4 text-xs font-semibold text-primary shadow-soft hover:bg-secondary"
-        >
-          <Compass className="h-4 w-4" />
-          <span>{t("continue_as_guest")}</span>
-        </Link>
+      {/* Footer */}
+      <footer className="mt-8 text-center space-y-1">
+        <p className="text-xs font-semibold text-primary/80">{t("tagline")}</p>
         <p className="text-[11px] text-muted-foreground">{t("hero_subtitle")}</p>
       </footer>
     </div>

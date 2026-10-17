@@ -341,14 +341,14 @@ export function ExploreMap({ facilities, userLocation, onLocate, locState }: Exp
       </div>
 
       {/* Marker Legend Pill */}
-      <div className="absolute top-3 right-14 z-20 hidden xs:flex items-center gap-3 rounded-full border border-border/80 bg-card/95 px-3 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur-xs">
+      <div className="absolute top-3 right-14 z-20 flex items-center gap-2.5 rounded-full border border-border/80 bg-card/95 px-3 py-1 text-[11px] font-semibold text-foreground shadow-xs backdrop-blur-xs">
         <span className="inline-flex items-center gap-1">
           <span className="h-2.5 w-2.5 rounded-full bg-[#0284C7]" />
           Water
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="h-2.5 w-2.5 rounded-full bg-[#28563B]" />
-          Shade / Rest
+          Shade
         </span>
       </div>
 

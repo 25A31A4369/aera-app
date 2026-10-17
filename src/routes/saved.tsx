@@ -19,7 +19,7 @@ export const Route = createFileRoute("/saved")({
 });
 
 function Saved() {
-  const { user, loading } = useAuth();
+  const { user, isDemo, loading } = useAuth();
   const saved = useQuery(savedIdsQuery(user?.id));
   const all = useQuery({ ...facilitiesQuery, enabled: !!user });
 
@@ -51,6 +51,14 @@ function Saved() {
   return (
     <AppShell title="Saved">
       <div className="space-y-3">
+        {isDemo && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-800 flex items-center justify-between">
+            <span>Demo Mode: Saved places persist for this evaluation session</span>
+            <Link to="/profile" className="font-bold underline text-[11px]">
+              Manage
+            </Link>
+          </div>
+        )}
         {isLoading ? (
           <Spinner />
         ) : err ? (

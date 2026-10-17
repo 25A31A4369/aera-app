@@ -18,10 +18,18 @@ export interface AuthResult {
 export function isBackendConfigured(): boolean {
   const url =
     import.meta.env["VITE_SUPABASE_URL"] ||
-    (typeof process !== "undefined" ? process.env?.["SUPABASE_URL"] : undefined);
+    (typeof process !== "undefined"
+      ? process.env?.["VITE_SUPABASE_URL"] || process.env?.["SUPABASE_URL"]
+      : undefined);
   const key =
     import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-    (typeof process !== "undefined" ? process.env?.["SUPABASE_PUBLISHABLE_KEY"] : undefined);
+    import.meta.env["VITE_SUPABASE_ANON_KEY"] ||
+    (typeof process !== "undefined"
+      ? process.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+        process.env?.["SUPABASE_PUBLISHABLE_KEY"] ||
+        process.env?.["VITE_SUPABASE_ANON_KEY"] ||
+        process.env?.["SUPABASE_ANON_KEY"]
+      : undefined);
 
   return Boolean(
     url &&
@@ -43,7 +51,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
       success: false,
       awaitingBackend: true,
       message:
-        "Authentication service is ready, but Supabase backend credentials (VITE_SUPABASE_URL & VITE_SUPABASE_PUBLISHABLE_KEY) are awaiting configuration in the next phase.",
+        "Authentication service is ready, but Supabase credentials (VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY) are awaiting configuration.",
     };
   }
 

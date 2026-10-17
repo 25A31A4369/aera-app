@@ -1,16 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Globe, LogIn, LogOut, Check, RotateCcw } from "lucide-react";
+import { LogIn, LogOut, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, Spinner, StateBox, primaryBtn } from "@/components/aera";
 import { friendlyError, myReportsQuery } from "@/lib/facilities";
 import { timeAgo } from "@/lib/trust";
 import { useAuth } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
-import { LANGUAGE_OPTIONS, type SupportedLanguage } from "@/lib/i18n";
 import { signOutUser } from "@/lib/auth-service";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -27,10 +25,9 @@ export const Route = createFileRoute("/profile")({
 
 function Profile() {
   const { user, loading } = useAuth();
-  const { language, setLanguage, currentOption, resetLanguageSelection, t } = useLanguage();
+  const { resetLanguageSelection, t } = useLanguage();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [isChangingLang, setIsChangingLang] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
 
@@ -94,7 +91,7 @@ function Profile() {
   return (
     <AppShell title={t("nav_profile")}>
       <div className="space-y-6">
-        {/* Account / Guest Status Card */}
+        {/* Account Status Card */}
         {user ? (
           <div className="rounded-2xl border bg-card p-5 shadow-soft">
             <p className="text-xs text-muted-foreground">Signed in as</p>
@@ -115,9 +112,10 @@ function Profile() {
           </div>
         ) : (
           <div className="rounded-2xl border border-primary/20 bg-card p-5 shadow-soft">
-            <h2 className="font-bold text-foreground text-base">{t("profile_guest_title")}</h2>
+            <h2 className="font-bold text-foreground text-base">Account Sign In</h2>
             <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-              {t("profile_guest_body")}
+              Sign in or create an account to view and manage your profile, saved places, and
+              community reports.
             </p>
             <div className="mt-4">
               <Link to="/auth" className={primaryBtn}>
@@ -127,57 +125,6 @@ function Profile() {
             </div>
           </div>
         )}
-
-        {/* Language Settings Card */}
-        <div className="rounded-2xl border bg-card p-5 shadow-soft">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-primary font-bold">
-              <Globe className="h-4 w-4" />
-              <h3 className="text-sm text-foreground">{t("current_language_label")}</h3>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsChangingLang(!isChangingLang)}
-              className="text-xs font-semibold text-primary underline"
-            >
-              {isChangingLang ? "Close" : t("change_language")}
-            </button>
-          </div>
-
-          <p className="mt-2 text-sm font-semibold text-primary">{currentOption.label}</p>
-          <p className="text-xs text-muted-foreground">{currentOption.description}</p>
-
-          {/* Expanded Language Picker */}
-          {isChangingLang && (
-            <div className="mt-4 space-y-2 pt-3 border-t">
-              {LANGUAGE_OPTIONS.map((opt) => {
-                const isSelected = language === opt.code;
-                return (
-                  <button
-                    key={opt.code}
-                    type="button"
-                    onClick={() => {
-                      setLanguage(opt.code as SupportedLanguage);
-                      setIsChangingLang(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-xl border p-3 text-left transition-all text-xs",
-                      isSelected
-                        ? "border-primary bg-primary/10 font-bold text-primary"
-                        : "border-border hover:bg-muted/40 text-foreground",
-                    )}
-                  >
-                    <div>
-                      <p className="font-semibold text-sm">{opt.label}</p>
-                      <p className="text-[11px] text-muted-foreground">"{opt.samplePhrase}"</p>
-                    </div>
-                    {isSelected && <Check className="h-4 w-4 text-primary shrink-0 ml-2" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
         {/* Reports Submitted */}
         {user && (

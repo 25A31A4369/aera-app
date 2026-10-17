@@ -30,6 +30,8 @@ import { LANGUAGE_OPTIONS, type SupportedLanguage } from "@/lib/i18n";
 import { AeraLogo } from "@/components/AeraLogo";
 import { supabase } from "@/integrations/supabase/client";
 
+import { toggleDemoSavedId } from "@/lib/demo-mode";
+
 export function AppShell({
   children,
   title,
@@ -42,6 +44,7 @@ export function AppShell({
   hideHeaderLang?: boolean;
 }) {
   const { currentOption, language, setLanguage, t } = useLanguage();
+  const { isDemo } = useAuth();
   const [showLangModal, setShowLangModal] = useState(false);
 
   return (
@@ -258,7 +261,7 @@ export function FacilityCard({
 }
 
 export function SaveButton({ facilityId }: { facilityId: string }) {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const { t } = useLanguage();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -268,6 +271,13 @@ export function SaveButton({ facilityId }: { facilityId: string }) {
   const mut = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Sign in required");
+
+      if (isDemo) {
+        // Isolated demo storage: does not touch real database or trigger RLS
+        toggleDemoSavedId(facilityId);
+        return;
+      }
+
       if (isSaved) {
         const { error } = await supabase
           .from("saved_facilities")
