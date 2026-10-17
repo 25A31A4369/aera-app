@@ -169,13 +169,6 @@ function ReportPage() {
           <span className="text-xs text-muted-foreground">{comment.length}/300</span>
         </label>
 
-        {isDemo && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-center text-xs text-amber-800">
-            <span className="font-bold">Demo Mode:</span> Your report updates trust freshness
-            immediately and remains isolated to this evaluation session.
-          </div>
-        )}
-
         <button type="submit" disabled={mut.isPending} className={primaryBtn}>
           {mut.isPending ? "Submitting…" : "Submit report"}
         </button>

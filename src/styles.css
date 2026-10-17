@@ -49,6 +49,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-sage: var(--sage);
+  --color-sage-light: var(--sage-light);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -83,6 +85,8 @@
   --warning-soft: #faf0e1;
   --caution: #a43b2a;
   --caution-soft: #fdeeeb;
+  --sage: #8fa88a;
+  --sage-light: #e7ede3;
   --demo: #e8dcc4;
   --demo-foreground: #4d3c23;
   --border: #e2ddd1;

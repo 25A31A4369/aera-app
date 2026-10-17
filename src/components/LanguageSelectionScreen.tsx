@@ -38,6 +38,7 @@ export function LanguageSelectionScreen({
           <h1 className="mt-3 font-display text-2xl font-bold tracking-tight text-foreground">
             {t("choose_language_title")}
           </h1>
+          <p className="mt-0.5 font-display text-xs font-semibold text-primary">{t("tagline")}</p>
           <p className="mt-1 text-xs text-muted-foreground leading-relaxed px-4">
             {t("choose_language_subtitle")}
           </p>

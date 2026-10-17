@@ -60,19 +60,52 @@ function createSupabaseFetch(supabaseUrl: string, supabaseKey: string): typeof f
 
 import { createMockSupabaseClient } from "./mock-client";
 
+function isValidSupabaseUrl(url: string | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  if (!url.startsWith("http://") && !url.startsWith("https://")) return false;
+  if (
+    url.includes("<") ||
+    url.includes(">") ||
+    url.includes("your-project") ||
+    url.includes("placeholder")
+  ) {
+    return false;
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidSupabaseKey(key: string | undefined): boolean {
+  if (!key || typeof key !== "string") return false;
+  if (
+    key.includes("<") ||
+    key.includes(">") ||
+    key.includes("your-anon") ||
+    key.includes("placeholder")
+  ) {
+    return false;
+  }
+  return key.trim().length > 10;
+}
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Support both VITE_SUPABASE_ANON_KEY (standard Supabase) and VITE_SUPABASE_PUBLISHABLE_KEY (new convention)
   // Fall back to process.env for SSR (server-side rendering)
   const SUPABASE_URL =
-    import.meta.env["VITE_SUPABASE_URL"] ||
+    (typeof import.meta !== "undefined" && import.meta.env?.["VITE_SUPABASE_URL"]) ||
     (typeof process !== "undefined"
       ? process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"]
       : undefined);
 
   const SUPABASE_KEY =
-    import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
-    import.meta.env["VITE_SUPABASE_ANON_KEY"] ||
+    (typeof import.meta !== "undefined" &&
+      (import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+        import.meta.env?.["VITE_SUPABASE_ANON_KEY"])) ||
     (typeof process !== "undefined"
       ? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
         process.env["SUPABASE_PUBLISHABLE_KEY"] ||
@@ -80,23 +113,31 @@ function createSupabaseClient() {
         process.env["SUPABASE_ANON_KEY"]
       : undefined);
 
-  if (!SUPABASE_URL || !SUPABASE_KEY || !SUPABASE_URL.startsWith("http")) {
+  if (!isValidSupabaseUrl(SUPABASE_URL) || !isValidSupabaseKey(SUPABASE_KEY)) {
     console.info(
-      "[AI Studio] Supabase environment variables not configured. Using in-memory mock data.",
+      "[AI Studio] Supabase environment variables not configured or placeholder detected. Using in-memory mock data.",
     );
     return createMockSupabaseClient() as unknown as ReturnType<typeof createClient<Database>>;
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
-    global: {
-      fetch: createSupabaseFetch(SUPABASE_URL, SUPABASE_KEY),
-    },
-    auth: {
-      storage: brokeredPreviewStorage(),
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
+  try {
+    return createClient<Database>(SUPABASE_URL!, SUPABASE_KEY!, {
+      global: {
+        fetch: createSupabaseFetch(SUPABASE_URL!, SUPABASE_KEY!),
+      },
+      auth: {
+        storage: brokeredPreviewStorage(),
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  } catch (err) {
+    console.warn(
+      "[AI Studio] Failed to initialize Supabase client. Falling back to in-memory mock data:",
+      err,
+    );
+    return createMockSupabaseClient() as unknown as ReturnType<typeof createClient<Database>>;
+  }
 }
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;

@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { LogIn, LogOut, RotateCcw } from "lucide-react";
+import { LogIn, LogOut, RotateCcw, Clock, ChevronRight, User, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, Spinner, StateBox, primaryBtn } from "@/components/aera";
 import { friendlyError, myReportsQuery } from "@/lib/facilities";
-import { timeAgo } from "@/lib/trust";
+import { REPORT_LABELS, timeAgo, type ReportType } from "@/lib/trust";
 import { useAuth } from "@/lib/auth";
 import { useLanguage } from "@/lib/language";
 import { signOutUser } from "@/lib/auth-service";
@@ -13,43 +13,46 @@ import { signOutUser } from "@/lib/auth-service";
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
-      { title: "Profile & Settings — AERA" },
+      { title: "Profile — AERA" },
       {
         name: "description",
-        content: "Manage language settings and your AERA account.",
+        content: "Account details and activity history.",
       },
     ],
   }),
-  component: Profile,
+  component: ProfilePage,
 });
 
-function Profile() {
+function ProfilePage() {
   const { user, loading } = useAuth();
-  const { resetLanguageSelection, t } = useLanguage();
+  const { resetOnboarding, t } = useLanguage();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [showRestartModal, setShowRestartModal] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
 
-  const reports = useQuery(myReportsQuery(user?.id));
+  const reports = useQuery({
+    ...myReportsQuery(user?.id),
+    enabled: !!user?.id,
+  });
 
   const handleSignOut = async () => {
     await qc.cancelQueries();
     qc.clear();
     await signOutUser();
     navigate({ to: "/auth", replace: true });
+    toast.success("Signed out successfully");
   };
 
-  const handleRestart = async (shouldSignOut: boolean) => {
+  const handleStartOver = async () => {
     setIsRestarting(true);
     try {
-      if (shouldSignOut && user) {
+      if (user) {
         await qc.cancelQueries();
         qc.clear();
         await signOutUser();
       }
 
-      // Clear temporary search, filters, form drafts, temporary selections
+      // Clear temporary navigation, search, filters, form drafts
       if (typeof window !== "undefined") {
         try {
           sessionStorage.clear();
@@ -57,24 +60,23 @@ function Profile() {
           localStorage.removeItem("aera_explore_filter");
           localStorage.removeItem("aera_report_draft");
           localStorage.removeItem("aera_selected_facility");
+          localStorage.removeItem("aera_mock_session");
         } catch {
           // ignore
         }
       }
 
-      // Reset language selection so user restarts at first screen
-      resetLanguageSelection();
-      setShowRestartModal(false);
+      // Reset onboarding flags so user returns to Welcome
+      resetOnboarding();
 
-      toast.success("App restarted from Language Selection");
+      toast.success("Restarted from Welcome");
 
-      // Reset navigation history so Back does not reopen previous screens
       if (typeof window !== "undefined") {
         window.location.replace("/");
       } else {
         navigate({ to: "/", replace: true });
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to restart. Please try again.");
       setIsRestarting(false);
     }
@@ -91,170 +93,121 @@ function Profile() {
   return (
     <AppShell title={t("nav_profile")}>
       <div className="space-y-6">
-        {/* Account Status Card */}
-        {user ? (
-          <div className="rounded-2xl border bg-card p-5 shadow-soft">
-            <p className="text-xs text-muted-foreground">Signed in as</p>
-            <p className="mt-1 font-bold text-foreground break-all text-base">{user.email}</p>
-            {user.user_metadata?.display_name && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {String(user.user_metadata.display_name)}
+        {/* 1. Account Details */}
+        <section className="space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
+            Account Details
+          </h2>
+          {user ? (
+            <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-2xs space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-sm text-foreground truncate">
+                      {user.user_metadata?.display_name
+                        ? String(user.user_metadata.display_name)
+                        : user.email?.split("@")[0]}
+                    </p>
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Account Status</span>
+                <span className="text-xs font-semibold text-primary">Signed In</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 text-xs font-semibold text-destructive hover:bg-destructive/10 transition active:scale-[0.99]"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>{t("sign_out_button")}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-2xs space-y-3 text-center">
+              <p className="text-xs text-muted-foreground">
+                You are currently not signed in. Sign in to save places and view your history.
               </p>
-            )}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 font-semibold text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>{t("sign_out_button")}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-primary/20 bg-card p-5 shadow-soft">
-            <h2 className="font-bold text-foreground text-base">Account Sign In</h2>
-            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-              Sign in or create an account to view and manage your profile, saved places, and
-              community reports.
-            </p>
-            <div className="mt-4">
               <Link to="/auth" className={primaryBtn}>
                 <LogIn className="h-4 w-4 mr-1.5" />
                 <span>{t("sign_in_title")}</span>
               </Link>
             </div>
-          </div>
-        )}
+          )}
+        </section>
 
-        {/* Reports Submitted */}
-        {user && (
-          <div>
-            <h3 className="font-bold text-sm text-foreground">Your Community Reports</h3>
-            <div className="mt-3 space-y-2">
-              {reports.isLoading ? (
-                <Spinner />
-              ) : reports.isError ? (
-                <StateBox title="Couldn't load reports" body={friendlyError(reports.error)} />
-              ) : !reports.data?.length ? (
-                <StateBox
-                  title="No reports yet"
-                  body="Reports you submit will appear here."
-                  action={
-                    <Link to="/report" className="font-semibold text-primary text-xs">
-                      Submit a report
-                    </Link>
-                  }
-                />
-              ) : (
-                reports.data.map((r) => (
+        {/* 2. History */}
+        <section className="space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
+            History
+          </h2>
+          {user ? (
+            reports.isLoading ? (
+              <Spinner />
+            ) : reports.isError ? (
+              <StateBox title="Couldn't load history" body={friendlyError(reports.error)} />
+            ) : !reports.data?.length ? (
+              <StateBox
+                title="No activity history yet"
+                body="When you submit reports or interact with places, they will appear here."
+              />
+            ) : (
+              <div className="space-y-2">
+                {reports.data.map((r) => (
                   <Link
                     key={r.id}
                     to="/facility/$id"
                     params={{ id: r.facility_id }}
-                    className="block rounded-xl border bg-card p-3 text-xs"
+                    className="group flex items-center justify-between rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-primary/50 transition active:scale-[0.99]"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold">{r.facilities?.name ?? "Place"}</span>
-                      <span className="text-muted-foreground">{timeAgo(r.created_at)}</span>
+                    <div className="min-w-0 flex-1 pr-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs text-foreground truncate group-hover:text-primary transition-colors">
+                          {r.facilities?.name ?? "Place"}
+                        </span>
+                        <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-primary shrink-0">
+                          {REPORT_LABELS[r.report_type as ReportType] ?? r.report_type}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{timeAgo(r.created_at)}</span>
+                      </p>
                     </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary shrink-0" />
                   </Link>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+                ))}
+              </div>
+            )
+          ) : (
+            <StateBox
+              title="Sign in to view history"
+              body="Activity records appear when you are signed in."
+            />
+          )}
+        </section>
 
-        {/* Start Over / Restart Option Card */}
-        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-3">
-          <div className="flex items-center gap-2 text-foreground font-bold">
-            <RotateCcw className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-bold">{t("start_over_title")}</h3>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{t("start_over_desc")}</p>
-
+        {/* 3. Start Over */}
+        <section className="pt-2">
           <button
             type="button"
-            onClick={() => setShowRestartModal(true)}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 text-xs font-bold text-primary hover:bg-primary/10 active:scale-[0.99] transition shadow-xs"
+            disabled={isRestarting}
+            onClick={handleStartOver}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-secondary/80 text-xs font-bold text-primary hover:bg-secondary active:scale-[0.99] transition shadow-2xs disabled:opacity-50"
           >
             <RotateCcw className="h-4 w-4" />
-            <span>{t("start_over_title")}</span>
+            <span>{isRestarting ? "Restarting…" : t("start_over_title")}</span>
           </button>
-        </div>
+        </section>
       </div>
-
-      {/* Start Over Confirmation Modal */}
-      {showRestartModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="relative w-full max-w-sm rounded-3xl border bg-card p-5 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2.5 text-primary">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <RotateCcw className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-foreground">
-                  {t("start_over_confirm_title")}
-                </h3>
-                <p className="text-[11px] text-muted-foreground">Reset onboarding journey</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {t("start_over_confirm_body")}
-            </p>
-
-            {user ? (
-              <div className="space-y-2 pt-2 border-t">
-                <p className="text-xs font-semibold text-foreground">
-                  Choose how to handle your session:
-                </p>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    disabled={isRestarting}
-                    onClick={() => handleRestart(true)}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-destructive/10 border border-destructive/30 text-xs font-bold text-destructive hover:bg-destructive/20 transition disabled:opacity-50"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>{t("restart_signout")}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={isRestarting}
-                    onClick={() => handleRestart(false)}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs disabled:opacity-50"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    <span>{t("restart_keep_signed_in")}</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="pt-2 border-t">
-                <button
-                  type="button"
-                  disabled={isRestarting}
-                  onClick={() => handleRestart(false)}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition shadow-xs disabled:opacity-50"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Confirm Restart</span>
-                </button>
-              </div>
-            )}
-
-            <button
-              type="button"
-              disabled={isRestarting}
-              onClick={() => setShowRestartModal(false)}
-              className="inline-flex h-10 w-full items-center justify-center text-xs font-semibold text-muted-foreground hover:text-foreground"
-            >
-              {t("cancel")}
-            </button>
-          </div>
-        </div>
-      )}
     </AppShell>
   );
 }

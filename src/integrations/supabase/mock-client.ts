@@ -227,6 +227,28 @@ function persistSession(session: Session | null) {
   }
 }
 
+interface RegisteredAccount {
+  password: string;
+  user: User;
+}
+
+const mockRegisteredAccounts = new Map<string, RegisteredAccount>([
+  [
+    "aera.demo@example.com",
+    {
+      password: "AeraDemo@2026",
+      user: {
+        id: "mock-demo-user-00000000-0000-0000",
+        email: "aera.demo@example.com",
+        app_metadata: { provider: "email" },
+        user_metadata: { display_name: "AERA Demo", email: "aera.demo@example.com" },
+        aud: "authenticated",
+        created_at: "2026-01-01T00:00:00Z",
+      } as User,
+    },
+  ],
+]);
+
 export function createMockSupabaseClient() {
   const auth = {
     onAuthStateChange(callback: (event: string, session: Session | null) => void) {
@@ -251,17 +273,22 @@ export function createMockSupabaseClient() {
     async getUser() {
       return { data: { user: currentSession?.user ?? null }, error: null };
     },
-    async signInWithPassword({ email }: { email: string; password?: string }) {
-      const user: User = {
-        id:
-          "mock-user-" +
-          Math.abs(email.split("").reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)),
-        email,
-        app_metadata: {},
-        user_metadata: { display_name: email.split("@")[0] },
-        aud: "authenticated",
-        created_at: new Date().toISOString(),
-      };
+    async signInWithPassword({ email, password }: { email: string; password?: string }) {
+      const normalizedEmail = email.toLowerCase().trim();
+      const account = mockRegisteredAccounts.get(normalizedEmail);
+      if (!account) {
+        return {
+          data: { user: null, session: null },
+          error: { message: "Invalid login credentials. User account not found." },
+        };
+      }
+      if (account.password !== password) {
+        return {
+          data: { user: null, session: null },
+          error: { message: "Invalid login credentials. Incorrect password." },
+        };
+      }
+      const user = account.user;
       const session: Session = {
         access_token: "mock-jwt-token",
         token_type: "bearer",
@@ -274,21 +301,31 @@ export function createMockSupabaseClient() {
     },
     async signUp({
       email,
+      password,
+      options,
     }: {
       email: string;
       password?: string;
       options?: { data?: Record<string, unknown> };
     }) {
+      const normalizedEmail = email.toLowerCase().trim();
       const user: User = {
         id:
           "mock-user-" +
-          Math.abs(email.split("").reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)),
-        email,
+          Math.abs(
+            normalizedEmail.split("").reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0),
+          ),
+        email: normalizedEmail,
         app_metadata: {},
-        user_metadata: { display_name: email.split("@")[0] },
+        user_metadata: {
+          display_name: options?.data?.["display_name"] || normalizedEmail.split("@")[0],
+        },
         aud: "authenticated",
         created_at: new Date().toISOString(),
       };
+      if (password) {
+        mockRegisteredAccounts.set(normalizedEmail, { password, user });
+      }
       const session: Session = {
         access_token: "mock-jwt-token",
         token_type: "bearer",

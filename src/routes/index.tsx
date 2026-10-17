@@ -6,6 +6,8 @@ import { AppShell, FacilityCard, Spinner, StateBox, inputCls } from "@/component
 import { facilitiesQuery, friendlyError } from "@/lib/facilities";
 import { haversineKm } from "@/lib/trust";
 import { useLanguage } from "@/lib/language";
+import { useAuth } from "@/lib/auth";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { LanguageSelectionScreen } from "@/components/LanguageSelectionScreen";
 import { ExploreMap } from "@/components/ExploreMap";
 import { cn } from "@/lib/utils";
@@ -39,22 +41,44 @@ type LocState =
   | { kind: "error"; msg: string };
 
 function IndexPage() {
-  const { hasSelectedLanguage, completeLanguageSelection } = useLanguage();
+  const { hasCompletedWelcome, completeWelcome, hasSelectedLanguage, completeLanguageSelection } =
+    useLanguage();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // First User Journey: LANGUAGE SELECTION is the first screen
+  // 1. Welcome Screen
+  if (!hasCompletedWelcome) {
+    return <WelcomeScreen onContinue={() => completeWelcome()} />;
+  }
+
+  // 2. Language Selection Screen
   if (!hasSelectedLanguage) {
     return (
       <LanguageSelectionScreen
         onContinue={(chosenLang) => {
           completeLanguageSelection(chosenLang);
-          // Transition to next journey step: AUTHENTICATION
+          // Always navigate to Sign In page after language selection
           navigate({ to: "/auth" });
         }}
       />
     );
   }
 
+  // 3. Authentication check: User must be signed in to access Explore
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!user) {
+    navigate({ to: "/auth", replace: true });
+    return null;
+  }
+
+  // 4. Explore / Home Screen
   return <Explore />;
 }
 
@@ -66,6 +90,7 @@ function Explore() {
   const [viewMode, setViewMode] = useState<"list" | "map">("map");
   const [loc, setLoc] = useState<LocState>({ kind: "idle" });
 
+  // Exactly three simple filters: All Places, Drinking Water, Shade
   const filterTabs = [
     { key: "all" as const, label: t("filter_all") },
     { key: "water" as const, label: t("filter_water") },
@@ -121,19 +146,19 @@ function Explore() {
 
   return (
     <AppShell title={t("tagline")} subtitle={t("hero_subtitle")}>
-      {/* Search Bar */}
+      {/* Search Bar near the top */}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("search_placeholder")}
           aria-label={t("search_placeholder")}
-          className={cn(inputCls, "pl-11 text-sm shadow-xs")}
+          className={cn(inputCls, "pl-10 text-sm shadow-2xs")}
         />
       </div>
 
-      {/* Exactly Three Category Filters & Map/List Toggle */}
+      {/* Exactly Three Simple Filters & Map/List Toggle */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-1 items-center gap-1.5 overflow-x-auto pb-0.5">
           {filterTabs.map((f) => (
@@ -144,7 +169,7 @@ function Explore() {
               className={cn(
                 "h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition-all active:scale-95",
                 filter === f.key
-                  ? "border-primary bg-primary text-primary-foreground shadow-xs font-bold"
+                  ? "border-primary bg-primary text-primary-foreground shadow-2xs font-bold"
                   : "border-border/90 bg-card text-foreground/80 hover:bg-muted/70 hover:text-foreground",
               )}
             >
@@ -153,15 +178,15 @@ function Explore() {
           ))}
         </div>
 
-        {/* View Toggle */}
-        <div className="flex shrink-0 items-center rounded-xl border border-border/80 bg-card p-1 shadow-xs">
+        {/* Easy Map / List View Toggle */}
+        <div className="flex shrink-0 items-center rounded-xl border border-border/80 bg-card p-1 shadow-2xs">
           <button
             type="button"
             onClick={() => setViewMode("list")}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition",
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition",
               viewMode === "list"
-                ? "bg-primary text-primary-foreground shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
             title={t("view_list")}
@@ -174,9 +199,9 @@ function Explore() {
             type="button"
             onClick={() => setViewMode("map")}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition",
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition",
               viewMode === "map"
-                ? "bg-primary text-primary-foreground shadow-xs"
+                ? "bg-primary text-primary-foreground shadow-2xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
             title={t("view_map")}
@@ -188,7 +213,8 @@ function Explore() {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+      {/* Location Bar */}
+      <div className="mt-2.5 flex items-center justify-between gap-3 text-xs">
         {loc.kind === "ok" ? (
           <span className="text-muted-foreground">{t("loc_sorted")}</span>
         ) : loc.kind === "error" ? (
@@ -201,7 +227,7 @@ function Explore() {
             type="button"
             onClick={askLocation}
             disabled={loc.kind === "loading"}
-            className="inline-flex shrink-0 items-center gap-1.5 font-semibold text-primary disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1 font-semibold text-primary disabled:opacity-60 hover:underline"
           >
             <LocateFixed className="h-3.5 w-3.5" />
             <span>{loc.kind === "loading" ? t("loc_locating") : t("loc_use_location")}</span>
@@ -210,7 +236,7 @@ function Explore() {
       </div>
 
       {/* Main View Area: Map or List */}
-      <section className="mt-4 space-y-3">
+      <section className="mt-3.5 space-y-2.5">
         {q.isLoading ? (
           <Spinner />
         ) : q.isError ? (

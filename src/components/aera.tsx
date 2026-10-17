@@ -5,7 +5,7 @@ import {
   BookmarkCheck,
   Compass,
   Droplets,
-  Flag,
+  Clock,
   Globe,
   Loader2,
   Sun,
@@ -44,19 +44,40 @@ export function AppShell({
   hideHeaderLang?: boolean;
 }) {
   const { currentOption, language, setLanguage, t } = useLanguage();
-  const { isDemo } = useAuth();
   const [showLangModal, setShowLangModal] = useState(false);
 
+  const navItems = [
+    { to: "/", label: t("nav_explore"), icon: Compass },
+    { to: "/saved", label: t("nav_saved"), icon: Bookmark },
+    { to: "/history", label: t("nav_history"), icon: Clock },
+    { to: "/profile", label: t("nav_profile"), icon: User },
+  ] as const;
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col">
-      <header className="px-5 pt-6 pb-3">
-        <div className="flex items-center justify-between">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col bg-background">
+      <header className="px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between gap-2">
           <Link to="/" className="flex items-center gap-2.5 transition active:scale-[0.98]">
             <AeraLogo size="md" variant="badge" />
             <span className="font-display text-2xl font-black tracking-tight text-primary">
               AERA
             </span>
           </Link>
+
+          {/* Clean Desktop Navigation Bar */}
+          <nav className="hidden sm:flex items-center gap-1 rounded-xl bg-muted/60 p-1">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                activeOptions={{ exact: to === "/" }}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground data-[status=active]:bg-card data-[status=active]:text-primary data-[status=active]:shadow-xs"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
 
           {!hideHeaderLang && (
             <button
@@ -71,11 +92,15 @@ export function AppShell({
           )}
         </div>
 
-        {title && <h1 className="mt-4 font-display text-3xl font-medium leading-tight">{title}</h1>}
-        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+        {title && (
+          <h1 className="mt-4 font-display text-2xl sm:text-3xl font-bold leading-tight text-foreground">
+            {title}
+          </h1>
+        )}
+        {subtitle && <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{subtitle}</p>}
       </header>
 
-      <main className="flex-1 px-5 pb-28">{children}</main>
+      <main className="flex-1 px-5 pb-24">{children}</main>
       <BottomNav />
 
       {/* Language Quick-Switch Modal */}
@@ -137,22 +162,22 @@ function BottomNav() {
   const items = [
     { to: "/", label: t("nav_explore"), icon: Compass },
     { to: "/saved", label: t("nav_saved"), icon: Bookmark },
-    { to: "/report", label: t("nav_report"), icon: Flag },
+    { to: "/history", label: t("nav_history"), icon: Clock },
     { to: "/profile", label: t("nav_profile"), icon: User },
   ] as const;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t bg-card/95 backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border/70 bg-card/95 backdrop-blur-md shadow-lg sm:hidden">
       <ul className="mx-auto grid max-w-xl grid-cols-4">
         {items.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <Link
               to={to}
               activeOptions={{ exact: to === "/" }}
-              className="flex flex-col items-center gap-1 py-3 text-xs font-medium text-muted-foreground data-[status=active]:text-primary"
+              className="flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground data-[status=active]:text-primary"
             >
               <Icon className="h-5 w-5" />
-              <span>{label}</span>
+              <span className="text-[11px] leading-none">{label}</span>
             </Link>
           </li>
         ))}
@@ -171,7 +196,7 @@ export function TrustBadge({ status, label }: { status: TrustStatus; label: stri
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
         trustStyles[status],
       )}
     >
@@ -219,43 +244,38 @@ export function FacilityCard({
     <Link
       to="/facility/$id"
       params={{ id: f.id }}
-      className="group block rounded-2xl border bg-card p-4 shadow-soft transition-all hover:border-primary/60 hover:shadow-md active:scale-[0.99] cursor-pointer"
+      className="group block rounded-2xl border border-border/80 bg-card p-3.5 shadow-2xs transition-all hover:border-primary/60 hover:shadow-xs active:scale-[0.99]"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
             <CategoryIcon category={f.category} className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold leading-snug group-hover:text-primary transition-colors">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm leading-snug text-foreground truncate group-hover:text-primary transition-colors">
                 {f.name}
               </h3>
               {f.is_demo && <DemoBadge />}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
               {CATEGORY_LABELS[f.category] ?? f.category}
               {distanceKm != null &&
                 ` · ${distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`}`}
             </p>
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-1" />
+        <div className="flex items-center gap-2 shrink-0">
+          <TrustBadge status={trust.status} label={trustLabel} />
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <TrustBadge status={trust.status} label={trustLabel} />
-        <span className="text-xs text-muted-foreground">
-          Confirmed {timeAgo(f.last_confirmed_at)}
-        </span>
-      </div>
-      <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-        <dt className="text-muted-foreground">Hours</dt>
-        <dd>{f.opening_hours ?? "Not confirmed"}</dd>
-        <dt className="text-muted-foreground">Public access</dt>
-        <dd>{knownText(f.public_access)}</dd>
-        <dt className="text-muted-foreground">Free</dt>
-        <dd>{knownText(f.is_free)}</dd>
-      </dl>
+      {f.last_confirmed_at && (
+        <div className="mt-2.5 pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Freshness status</span>
+          <span>Confirmed {timeAgo(f.last_confirmed_at)}</span>
+        </div>
+      )}
     </Link>
   );
 }

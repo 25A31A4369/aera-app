@@ -3,62 +3,59 @@ import { useQuery } from "@tanstack/react-query";
 import { AppShell, FacilityCard, Spinner, StateBox, primaryBtn } from "@/components/aera";
 import { facilitiesQuery, friendlyError, savedIdsQuery } from "@/lib/facilities";
 import { useAuth } from "@/lib/auth";
+import { useLanguage } from "@/lib/language";
 
 export const Route = createFileRoute("/saved")({
   head: () => ({
     meta: [
-      { title: "Saved places — AERA" },
+      { title: "Saved Places — AERA" },
       { name: "description", content: "Your saved water, shade and rest spots." },
-      { property: "og:title", content: "Saved places — AERA" },
+      { property: "og:title", content: "Saved Places — AERA" },
       { property: "og:description", content: "Your saved water, shade and rest spots." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Saved,
+  component: SavedPage,
 });
 
-function Saved() {
-  const { user, isDemo, loading } = useAuth();
+function SavedPage() {
+  const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const saved = useQuery(savedIdsQuery(user?.id));
   const all = useQuery({ ...facilitiesQuery, enabled: !!user });
 
-  if (loading)
+  if (loading) {
     return (
-      <AppShell title="Saved">
+      <AppShell title={t("nav_saved")}>
         <Spinner />
       </AppShell>
     );
-  if (!user)
+  }
+
+  if (!user) {
     return (
-      <AppShell title="Saved">
+      <AppShell title={t("nav_saved")}>
         <StateBox
           title="Sign in to save places"
-          body="Keep your go-to spots one tap away."
+          body="Save your go-to water and shade spots to easily find them anytime."
           action={
             <Link to="/auth" className={primaryBtn}>
-              Sign in
+              {t("sign_in_title")}
             </Link>
           }
         />
       </AppShell>
     );
+  }
 
   const isLoading = saved.isLoading || all.isLoading;
   const err = saved.error || all.error;
   const items = (saved.data ?? []).map((id) => all.data?.find((f) => f.id === id)).filter(Boolean);
 
   return (
-    <AppShell title="Saved">
+    <AppShell title={t("nav_saved")} subtitle="Your saved water points and shaded spots">
       <div className="space-y-3">
-        {isDemo && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-800 flex items-center justify-between">
-            <span>Demo Mode: Saved places persist for this evaluation session</span>
-            <Link to="/profile" className="font-bold underline text-[11px]">
-              Manage
-            </Link>
-          </div>
-        )}
         {isLoading ? (
           <Spinner />
         ) : err ? (
@@ -66,7 +63,7 @@ function Saved() {
         ) : items.length === 0 ? (
           <StateBox
             title="Nothing saved yet"
-            body="Tap Save on any place to keep it here."
+            body="Tap the bookmark button on any place to keep it here."
             action={
               <Link to="/" className="font-semibold text-primary">
                 Explore places

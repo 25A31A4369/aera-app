@@ -12,7 +12,7 @@ import {
   User as UserIcon,
   ArrowLeft,
   KeyRound,
-  Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import { useLanguage } from "@/lib/language";
 import { useAuth } from "@/lib/auth";
@@ -53,17 +53,16 @@ function AuthPage() {
     message: string;
   } | null>(null);
 
-  // Field errors
+  // Field validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Redirect if already authenticated
+  // Redirect to Explore only if user is already authenticated
   useEffect(() => {
     if (user) {
       navigate({ to: "/", replace: true });
     }
   }, [user, navigate]);
 
-  // Client validation
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
@@ -115,28 +114,24 @@ function AuthPage() {
         if (result.success) {
           toast.success(t("sign_in_title") + " successful");
           navigate({ to: "/" });
-        } else if (result.awaitingBackend) {
-          setStatusNotice({
-            type: "warning",
-            message: t("auth_backend_awaiting"),
-          });
-          toast.info("Input validated. Supabase backend awaiting configuration.");
         } else {
           const isDemoEmail = email.toLowerCase().trim() === "aera.demo@example.com";
-          if (isDemoEmail) {
+          if (isDemoEmail && result.error?.includes("not found")) {
             setStatusNotice({
               type: "warning",
               message:
-                "Demo account 'aera.demo@example.com' has not been created in your Supabase Auth dashboard yet. You can create it in the Create Account tab with password 'AeraDemo@2026' or via your Supabase Auth dashboard.",
+                "Demo account 'aera.demo@example.com' has not been created in your Supabase Auth dashboard yet. You can create it in the Create Account tab or via your Supabase Auth dashboard.",
             });
             toast.error(
               "Demo account not found in Supabase Auth. Register it in Create Account to enable sign-in.",
             );
           } else {
-            toast.error(result.error ?? "Sign in failed");
+            const errorMsg =
+              result.error || "Invalid credentials. Please check your email and password.";
+            toast.error(errorMsg);
             setStatusNotice({
               type: "error",
-              message: result.error ?? "Invalid credentials",
+              message: errorMsg,
             });
           }
         }
@@ -146,19 +141,18 @@ function AuthPage() {
           toast.success(result.message ?? t("create_account_title"));
           setStatusNotice({
             type: "success",
-            message: result.message ?? "Registration initiated.",
+            message: result.message ?? "Registration completed.",
           });
-        } else if (result.awaitingBackend) {
-          setStatusNotice({
-            type: "warning",
-            message: t("auth_backend_awaiting"),
-          });
-          toast.info("Validation passed. Backend will connect in the next phase.");
+          if (result.session) {
+            navigate({ to: "/" });
+          } else {
+            setMode("signin");
+          }
         } else {
           toast.error(result.error ?? "Account creation failed");
           setStatusNotice({
             type: "error",
-            message: result.error ?? "Account creation failed",
+            message: result.error ?? "Account creation failed. Please try again.",
           });
         }
       } else {
@@ -169,25 +163,34 @@ function AuthPage() {
             type: "success",
             message: t("reset_instructions_sent"),
           });
-        } else if (result.awaitingBackend) {
-          setStatusNotice({
-            type: "warning",
-            message: t("auth_backend_awaiting"),
-          });
-          toast.info("Validation passed. Reset dispatch awaiting Supabase configuration.");
         } else {
           toast.error(result.error ?? "Reset failed");
           setStatusNotice({
             type: "error",
-            message: result.error ?? "Reset failed",
+            message: result.error ?? "Reset request failed.",
           });
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "An error occurred");
+      const msg = err instanceof Error ? err.message : "An error occurred during authentication.";
+      toast.error(msg);
+      setStatusNotice({
+        type: "error",
+        message: msg,
+      });
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleFillDemoCredentials = () => {
+    // Populate the email and password fields with configured demo credentials
+    // Note: Do not submit automatically, do not navigate. User must manually click Sign In.
+    setEmail("aera.demo@example.com");
+    setPassword("AeraDemo@2026");
+    setFieldErrors({});
+    setStatusNotice(null);
+    toast.info("Demo credentials filled. Click Sign In to continue.");
   };
 
   const handleReturnToLanguage = () => {
@@ -196,9 +199,9 @@ function AuthPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-between px-5 py-6">
-      <main className="space-y-6">
-        {/* Top bar with Language Selector option */}
+    <div className="mx-auto flex min-h-[100dvh] max-w-md flex-col justify-between bg-background px-5 py-6 text-foreground">
+      <main className="space-y-5">
+        {/* Top Bar with Language Selector */}
         <div className="flex items-center justify-between border-b border-border/70 pb-3">
           <button
             type="button"
@@ -208,7 +211,9 @@ function AuthPage() {
           >
             <Globe className="h-3.5 w-3.5" />
             <span>{currentOption.label}</span>
-            <span className="text-[10px] underline font-normal">({t("change_language")})</span>
+            <span className="text-[10px] text-muted-foreground font-normal">
+              ({t("change_language")})
+            </span>
           </button>
         </div>
 
@@ -220,9 +225,11 @@ function AuthPage() {
               AERA
             </h1>
           </Link>
-          <p className="mt-1 font-display text-sm font-medium text-foreground/85">{t("tagline")}</p>
-          <p className="mt-2 text-xs text-muted-foreground px-4">
-            Sign in to access your saved places and submit community reports.
+          <p className="mt-1 font-display text-sm font-semibold text-foreground/90">
+            {t("tagline")}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground px-4">
+            Sign in to access your saved places and submit community freshness reports.
           </p>
         </header>
 
@@ -236,9 +243,9 @@ function AuthPage() {
               setFieldErrors({});
             }}
             className={cn(
-              "h-10 rounded-lg text-sm font-semibold transition-all",
+              "h-10 rounded-lg text-xs font-bold transition-all",
               mode === "signin"
-                ? "bg-card text-foreground shadow-sm"
+                ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -252,9 +259,9 @@ function AuthPage() {
               setFieldErrors({});
             }}
             className={cn(
-              "h-10 rounded-lg text-sm font-semibold transition-all",
+              "h-10 rounded-lg text-xs font-bold transition-all",
               mode === "signup"
-                ? "bg-card text-foreground shadow-sm"
+                ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -265,10 +272,10 @@ function AuthPage() {
         {/* Form Container */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-2xl border bg-card p-5 shadow-soft"
+          className="space-y-4 rounded-2xl border border-border/80 bg-card p-5 shadow-soft"
         >
           <div>
-            <h2 className="text-lg font-bold text-foreground">
+            <h2 className="text-base font-bold text-foreground">
               {mode === "signin"
                 ? t("sign_in_title")
                 : mode === "signup"
@@ -277,18 +284,18 @@ function AuthPage() {
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {mode === "signin"
-                ? t("browse_freely_note")
+                ? "Enter your account email and password."
                 : mode === "signup"
                   ? t("create_account_subtitle")
                   : t("reset_password_subtitle")}
             </p>
           </div>
 
-          {/* Status / Error feedback */}
+          {/* Status / Error Banner */}
           {statusNotice && (
             <div
               className={cn(
-                "rounded-xl border p-3 text-xs",
+                "flex items-start gap-2 rounded-xl border p-3 text-xs leading-relaxed",
                 statusNotice.type === "success" && "border-success/30 bg-success-soft text-success",
                 statusNotice.type === "warning" && "border-warning/30 bg-warning-soft text-warning",
                 statusNotice.type === "error" &&
@@ -296,7 +303,8 @@ function AuthPage() {
                 statusNotice.type === "info" && "border-primary/20 bg-primary/5 text-primary",
               )}
             >
-              {statusNotice.message}
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="flex-1">{statusNotice.message}</div>
             </div>
           )}
 
@@ -351,7 +359,7 @@ function AuthPage() {
             )}
           </div>
 
-          {/* Password Field (for signin & signup) */}
+          {/* Password Field */}
           {mode !== "forgot" && (
             <div className="space-y-1">
               <div className="flex items-center justify-between">
@@ -449,11 +457,11 @@ function AuthPage() {
             </div>
           )}
 
-          {/* Primary Action Button */}
+          {/* Clear Sign In Action Button */}
           <button
             type="submit"
             disabled={busy}
-            className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition active:scale-[0.99] disabled:opacity-60"
+            className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition active:scale-[0.99] hover:bg-primary/95 disabled:opacity-60"
           >
             {busy ? (
               <>
@@ -477,18 +485,12 @@ function AuthPage() {
             )}
           </button>
 
-          {/* Fill Demo Credentials Button (below Sign In) */}
+          {/* Separate Secondary Button: "Fill Demo Credentials" */}
           {mode === "signin" && (
             <button
               type="button"
-              onClick={() => {
-                setEmail("aera.demo@example.com");
-                setPassword("AeraDemo@2026");
-                setFieldErrors({});
-                setStatusNotice(null);
-                toast.info("Demo credentials filled. Click Sign In to continue.");
-              }}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-secondary/70 text-xs font-bold text-primary hover:bg-secondary active:scale-[0.99] transition shadow-xs"
+              onClick={handleFillDemoCredentials}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/25 bg-[#E7EDE3] text-xs font-bold text-primary hover:bg-[#dbe4d6] active:scale-[0.99] transition shadow-2xs"
             >
               <KeyRound className="h-3.5 w-3.5" />
               <span>Fill Demo Credentials</span>

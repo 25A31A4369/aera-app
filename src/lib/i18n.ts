@@ -79,6 +79,31 @@ export const translations = {
     "hi-en": "Outdoor workers के लिए Drinking water, shade और rest spots — ताज़ा status के साथ।",
   },
 
+  // Welcome Screen
+  welcome_title: {
+    en: "Welcome to AERA",
+    te: "AERA కి స్వాగతం",
+    "te-en": "Welcome to AERA",
+    hi: "AERA में आपका स्वागत है",
+    "hi-en": "Welcome to AERA",
+  },
+  welcome_desc: {
+    en: "Find clean drinking water, tree shade, and cool resting places during hot weather across India.",
+    te: "భారతదేశంలో తీవ్రమైన ఎండలో స్వచ్ఛమైన తాగునీరు, చెట్ల నీడ మరియు చల్లని విశ్రాంతి ప్రదేశాలను కనుగొనండి.",
+    "te-en":
+      "India లో hot weather లో clean drinking water, tree shade మరియు cool rest spots కనుగొనండి.",
+    hi: "भारत में भीषण गर्मी के दौरान स्वच्छ पेयजल, पेड़ों की छांव और ठंडे विश्राम स्थल खोजें।",
+    "hi-en":
+      "India में hot weather के दौरान clean drinking water, tree shade और cool rest spots खोजें।",
+  },
+  get_started: {
+    en: "Get Started",
+    te: "ప్రారంభించండి",
+    "te-en": "Get Started",
+    hi: "शुरू करें",
+    "hi-en": "Get Started",
+  },
+
   // Language Selection Screen
   choose_language_title: {
     en: "Choose your language",
@@ -424,6 +449,13 @@ export const translations = {
     "te-en": "Saved",
     hi: "सुरक्षित",
     "hi-en": "Saved",
+  },
+  nav_history: {
+    en: "History",
+    te: "చరిత్ర",
+    "te-en": "History",
+    hi: "इतिहास",
+    "hi-en": "History",
   },
   nav_report: {
     en: "Report",

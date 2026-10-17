@@ -34,27 +34,67 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
 import { createMockSupabaseClient } from "./mock-client";
 
+function isValidSupabaseUrl(url: string | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  if (!url.startsWith("http://") && !url.startsWith("https://")) return false;
+  if (
+    url.includes("<") ||
+    url.includes(">") ||
+    url.includes("your-project") ||
+    url.includes("placeholder")
+  ) {
+    return false;
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidSupabaseKey(key: string | undefined): boolean {
+  if (!key || typeof key !== "string") return false;
+  if (
+    key.includes("<") ||
+    key.includes(">") ||
+    key.includes("your-service-role") ||
+    key.includes("placeholder")
+  ) {
+    return false;
+  }
+  return key.trim().length > 10;
+}
+
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env["SUPABASE_URL"];
   const SUPABASE_SERVICE_ROLE_KEY = process.env["SUPABASE_SERVICE_ROLE_KEY"];
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !SUPABASE_URL.startsWith("http")) {
+  if (!isValidSupabaseUrl(SUPABASE_URL) || !isValidSupabaseKey(SUPABASE_SERVICE_ROLE_KEY)) {
     console.info(
       "[AI Studio] Supabase server environment variables not configured. Using mock admin client.",
     );
     return createMockSupabaseClient() as unknown as ReturnType<typeof createClient<Database>>;
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    global: {
-      fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY),
-    },
-    auth: {
-      storage: undefined,
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
+  try {
+    return createClient<Database>(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
+      global: {
+        fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY!),
+      },
+      auth: {
+        storage: undefined,
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+  } catch (err) {
+    console.warn(
+      "[AI Studio] Failed to initialize Supabase admin client. Using mock admin client:",
+      err,
+    );
+    return createMockSupabaseClient() as unknown as ReturnType<typeof createClient<Database>>;
+  }
 }
 
 let _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | undefined;

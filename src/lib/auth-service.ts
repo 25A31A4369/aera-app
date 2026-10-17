@@ -37,6 +37,8 @@ export function isBackendConfigured(): boolean {
     typeof url === "string" &&
     url.startsWith("http") &&
     !url.includes("placeholder") &&
+    !url.includes("<") &&
+    !url.includes(">") &&
     !url.includes("your-project"),
   );
 }
@@ -46,15 +48,6 @@ export function isBackendConfigured(): boolean {
  * Only calls backend if configured.
  */
 export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
-  if (!isBackendConfigured()) {
-    return {
-      success: false,
-      awaitingBackend: true,
-      message:
-        "Authentication service is ready, but Supabase credentials (VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY) are awaiting configuration.",
-    };
-  }
-
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -80,15 +73,6 @@ export async function signUpWithEmail(
   email: string,
   password: string,
 ): Promise<AuthResult> {
-  if (!isBackendConfigured()) {
-    return {
-      success: false,
-      awaitingBackend: true,
-      message:
-        "Input validation passed! Registration requires connecting your Supabase project in the next backend integration phase.",
-    };
-  }
-
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -122,15 +106,6 @@ export async function signUpWithEmail(
  * Send password reset email.
  */
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
-  if (!isBackendConfigured()) {
-    return {
-      success: false,
-      awaitingBackend: true,
-      message:
-        "Password reset request validated! Live reset emails will dispatch once Supabase email credentials are configured.",
-    };
-  }
-
   try {
     const redirectUrl =
       typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined;

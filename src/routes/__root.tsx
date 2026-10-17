@@ -70,9 +70,21 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
+      { title: "AERA — Find Shade. Find Relief." },
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#f7f3ea" },
+      {
+        name: "description",
+        content:
+          "Find drinking-water points and shaded places to rest for outdoor workers in India, with honest freshness indicators.",
+      },
+      { property: "og:title", content: "AERA — Find Shade. Find Relief." },
+      {
+        property: "og:description",
+        content:
+          "Find drinking-water points and shaded places to rest for outdoor workers in India, with honest freshness indicators.",
+      },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
